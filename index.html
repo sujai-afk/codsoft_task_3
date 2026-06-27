@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modern Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="page-header">
+    <div class="page-heading">A Modern Calculator</div>
+    <div class="brand-name">CODSOFT</div>
+  </header>
+  <div class="calculator">
+    <div class="screen">
+      <div class="expression" id="expression">&nbsp;</div>
+      <div class="output" id="output">0</div>
+    </div>
+    <div class="buttons">
+      <button class="button utility" data-action="clear">AC</button>
+      <button class="button utility" data-action="plus-minus">+/-</button>
+      <button class="button utility" data-action="percent">%</button>
+      <button class="button operator" data-action="operator" data-value="÷">÷</button>
+
+      <button class="button" data-action="number" data-value="7">7</button>
+      <button class="button" data-action="number" data-value="8">8</button>
+      <button class="button" data-action="number" data-value="9">9</button>
+      <button class="button operator" data-action="operator" data-value="×">×</button>
+
+      <button class="button" data-action="number" data-value="4">4</button>
+      <button class="button" data-action="number" data-value="5">5</button>
+      <button class="button" data-action="number" data-value="6">6</button>
+      <button class="button operator" data-action="operator" data-value="-">-</button>
+
+      <button class="button" data-action="number" data-value="1">1</button>
+      <button class="button" data-action="number" data-value="2">2</button>
+      <button class="button" data-action="number" data-value="3">3</button>
+      <button class="button operator" data-action="operator" data-value="+">+</button>
+
+      <button class="button zero" data-action="number" data-value="0">0</button>
+      <button class="button" data-action="decimal" data-value=".">.</button>
+      <button class="button equals" data-action="equals">=</button>
+    </div>
+  </div>
+
+  <script>
+    const expressionElement = document.getElementById('expression');
+    const outputElement = document.getElementById('output');
+    const buttons = document.querySelectorAll('.button');
+
+    let currentValue = '0';
+    let previousValue = null;
+    let operator = null;
+    let waitingForNextValue = false;
+
+    function updateDisplay() {
+      outputElement.textContent = currentValue;
+      expressionElement.textContent = previousValue && operator ? `${previousValue} ${operator}` : '';
+    }
+
+    function resetCalculator() {
+      currentValue = '0';
+      previousValue = null;
+      operator = null;
+      waitingForNextValue = false;
+      updateDisplay();
+    }
+
+    function inputDigit(digit) {
+      if (waitingForNextValue) {
+        currentValue = digit;
+        waitingForNextValue = false;
+      } else {
+        currentValue = currentValue === '0' ? digit : currentValue + digit;
+      }
+    }
+
+    function inputDecimal() {
+      if (waitingForNextValue) {
+        currentValue = '0.';
+        waitingForNextValue = false;
+        return;
+      }
+      if (!currentValue.includes('.')) {
+        currentValue += '.';
+      }
+    }
+
+    function toggleSign() {
+      if (currentValue === '0' || currentValue === 'Error') return;
+      currentValue = currentValue.startsWith('-') ? currentValue.slice(1) : '-' + currentValue;
+    }
+
+    function percentValue() {
+      if (currentValue === 'Error') return;
+      currentValue = String(parseFloat(currentValue) / 100);
+    }
+
+    function calculate(first, second, op) {
+      const num1 = parseFloat(first);
+      const num2 = parseFloat(second);
+
+      if (Number.isNaN(num1) || Number.isNaN(num2)) return '0';
+
+      if (op === '+') return String(num1 + num2);
+      if (op === '-') return String(num1 - num2);
+      if (op === '×') return String(num1 * num2);
+      if (op === '÷') {
+        if (num2 === 0) return 'Error';
+        return String(num1 / num2);
+      }
+      return '0';
+    }
+
+    function handleOperator(nextOperator) {
+      if (currentValue === 'Error') {
+        return;
+      }
+
+      const inputValue = currentValue;
+
+      if (operator && waitingForNextValue) {
+        operator = nextOperator;
+        updateDisplay();
+        return;
+      }
+
+      if (previousValue === null) {
+        previousValue = inputValue;
+      } else if (operator) {
+        const result = calculate(previousValue, inputValue, operator);
+        currentValue = result;
+        previousValue = result === 'Error' ? null : result;
+      }
+
+      waitingForNextValue = true;
+      operator = nextOperator;
+      updateDisplay();
+    }
+
+    function handleEquals() {
+      if (!operator || previousValue === null || waitingForNextValue) {
+        return;
+      }
+
+      const result = calculate(previousValue, currentValue, operator);
+      currentValue = result;
+      previousValue = result === 'Error' ? null : result;
+      operator = null;
+      waitingForNextValue = true;
+      updateDisplay();
+    }
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const action = button.getAttribute('data-action');
+        const value = button.getAttribute('data-value');
+
+        switch (action) {
+          case 'number':
+            inputDigit(value);
+            break;
+          case 'decimal':
+            inputDecimal();
+            break;
+          case 'clear':
+            resetCalculator();
+            break;
+          case 'plus-minus':
+            toggleSign();
+            break;
+          case 'percent':
+            percentValue();
+            break;
+          case 'operator':
+            handleOperator(value);
+            break;
+          case 'equals':
+            handleEquals();
+            break;
+        }
+
+        updateDisplay();
+      });
+    });
+
+    resetCalculator();
+  </script>
+  <script src="action.js"></script>
+</body>
+</html>
